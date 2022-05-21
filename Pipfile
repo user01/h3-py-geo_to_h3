@@ -1,0 +1,27 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+black = "==22.3.0"
+cython = "==0.29.28"
+flake8 = "==4.0.1"
+h3 = "==3.7.3"
+memray = "==1.0.3"
+multiprocess = "==0.70.12.2"
+numpy = "==1.22.3"
+pandas = "==1.4.2"
+py-cpuinfo = "==8.0.0"
+py-spy = "==0.3.11"
+pyarrow = "==7.0.0"
+pytest = "==7.1.1"
+pytest-benchmark = "==3.4.1"
+rich = "==10.16.2"
+scipy = "==1.8.0"
+tqdm = "==4.64.0"
+
+[dev-packages]
+
+[requires]
+python_version = "3.9"
