@@ -127,3 +127,13 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+*.log
+*.log.*
+benchmarks/
+*.html
+bench_memory/
+bench_cpu/
+*.speedscope
+.vscode
