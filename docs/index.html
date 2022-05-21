@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>h3-py-geo_to_h3 Benchmarks</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
+      crossorigin="anonymous"
+    />
+    <!-- JavaScript Bundle with Popper -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+      crossorigin="anonymous"
+    ></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css"
+    />
+    <meta name="theme-color" content="#7952b3">
+    <style>
+      h1 {
+        font-size: 3.4em;
+      }
+
+
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+      .btn-offset {
+        margin-left: 0.2em;
+      }
+    </style>
+  </head>
+
+  <body>
+    <section class="text-center">
+      <div class="container">
+        <h1 class="jumbotron-heading">h3-py-geo_to_h3 Benchmarks</h1>
+        <p class="lead text-muted">Code and logic: <a href="https://github.com/user01/h3-py-geo_to_h3" >Github repo</a>. - Reference <a href="https://github.com/uber/h3-py">H3 Repo</a></p>
+      </div>
+    </section>
+
+    <div
+      class="d-flex flex-column min-vh-100 justify-content-center align-items-center"
+    >
+      <div id="plot"></div>
+    </div>
+    <div class="fixed-bottom bg-light  mt-auto py-2 ">
+      <div class="container" id="footer">
+        <button type="button" class="btn btn-light btn-offset">Zoom to set:</button>
+      </div>
+      <div class="container" id="footer-zoom">
+        <button type="button" class="btn btn-light btn-offset">X Axis Range</button>
+      </div>
+    </div>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+
+        const footer = document.getElementById('footer');
+        const footer_zoom = document.getElementById('footer-zoom');
+        function htmlToElement(html) {
+            var template = document.createElement('template');
+            html = html.trim(); // Never return a text node of whitespace as the result
+            template.innerHTML = html;
+            return template.content.firstChild;
+        }
+      function format_tick(value) {
+        if (value < 1) {
+          return `0`;
+        }
+        if (value < 10 ** 3) {
+          return `${value.toFixed(0)}`;  // Hundreds
+        }
+        if (value < 10 ** 6) {
+          return `${(value/10**3).toFixed(value > 10**4 ? 0:1)}K`; // Thousands
+        }
+        if (value < 10 ** 9) {
+          return `${(value/10**6).toFixed(value > 10**7 ? 0:1)}M`; // Millions
+        }
+        if (value < 10 ** 12) {
+          return `${(value/10**9).toFixed(value > 10**10 ? 0:1)}B`; // Billions
+        }
+        if (value < 10 ** 15) {
+          return `${(value/10**12).toFixed(value > 10**13 ? 0:1)}T`; // Trillions
+        }
+        return `${value.toFixed(1)}`;
+      }
+
+      function map_color(name) {
+        if (name.includes("baseline")) {
+          return "#1074b2";
+        }
+        if (name.includes("pandas")) {
+          return "#00bdce";
+        }
+        if (name.includes("int")) {
+          return "#e771c0";
+        }
+        if (name.includes("threadpool_vector")) {
+          return "#7e7e7e";
+        }
+        if (name.includes("pool_vect")) {
+          return "#babe2d";
+        }
+        if (name.includes("pool")) {
+          return "darkgoldenrod";
+        }
+        if (name.includes("cuda")) {
+          if (name.includes("cuda_unified")) {
+            return "OrangeRed";
+          }
+          return "firebrick";
+        }
+        if (name.includes("vectorized")) {
+          return "ForestGreen";
+        }
+        if (name.includes("_int")) {
+          return "mediumslateblue";
+        }
+        return "steelblue";
+      }
+
+      d3.csv("results.csv").then(function (data) {
+        // ok, the objective here is to have all sets plotted
+        // and then based on the selected class:
+        //    - adjust the scales to the domains of the active plots
+        //    - adjust the opacity of the set iff series is on
+        console.log("Loaded");
+        data = data.filter(d => d.duration_seconds > 0.0).map(d => {
+          d.count = +d.count;
+          d.duration_seconds = +d.duration_seconds;
+          d.pts_per_second = +d.count / d.duration_seconds; // points per second
+          // d.mmcount = d.count / 1000000;  // pts in millions
+          // d.mmpts_per_second = +d.count / d.duration_seconds / 1000000; // millions of points per second
+          return d;
+        });
+        data.sort(function (x, y) {
+          return d3.ascending(x.name, y.name) || d3.ascending(x.count, y.count);
+        });
+        const processors = [...new Set(data.map(d=>d.processor))];
+
+        var myArray = data.map(d=>d.name);
+        let unique = [...new Set(myArray)];
+        // console.log(unique);
+        const cuda_normal = unique.filter(name => name.includes("cuda") && !name.includes("unified"));
+        const cuda_unified = unique.filter(name => name.includes("cuda_unified"));
+        const cuda_all = unique.filter(name => name.includes("cuda"));
+        console.log(data);
+        const subsets = {
+          "baseline": ["baseline",],
+          "pandas": ["baseline", "pandas", "pandas_int"],
+          "ints": ["baseline", "integer", "numpy_int", "memview_int"],
+          "vectorized": ["baseline", "integer", "vectorized"],
+          "threads_gil": ["baseline", "integer", "vectorized", "threadpool_16", "threadpool_2", "threadpool_4", "threadpool_8"],
+          "pool": ["baseline", "integer", "vectorized", "pool_16", "pool_2", "pool_4", "pool_8"],
+          "pool_vector": ["baseline", "integer", "vectorized", "pool_16", "pool_vector_16", "pool_vector_2", "pool_vector_4", "pool_vector_8"],
+          "thread_vector": ["baseline", "integer", "vectorized", "pool_16", "pool_vector_16", "threadpool_vector_16", "threadpool_vector_2", "threadpool_vector_4", "threadpool_vector_8"],
+          "cuda": ["baseline", "integer", "vectorized", "pool_16", "pool_vector_16", "threadpool_vector_16", ].concat(cuda_normal),
+          "cuda_all": ["baseline", "integer", "vectorized", "pool_16", "pool_vector_16", "threadpool_vector_16"].concat(cuda_all),
+          "complete": ["baseline", "integer", "vectorized", "pool_16", "pool_vector_16", "threadpool_vector_16", "cuda_unified_2048_128"],
+          "all": unique,
+        };
+
+        let processor_current = processors[0];
+        let x_type_current = "all";  // "all","linear","linear","all"
+        let x_scale_current = "linear";
+        let y_scale_current = "linear";
+        let subset_current = "all";
+        // for (const processor of processors) {
+        //   footer.appendChild(htmlToElement(`<button id="btn-${processor}" type="button" class="btn btn-light btn-offset">${processor}</button>`));
+        //   document.getElementById(`btn-${processor}`).addEventListener('click', event => {
+        //     processor_current = processor;
+        //     update();
+        //   });
+        // }
+
+        for (const subset of Object.keys(subsets)){
+          footer.appendChild(htmlToElement(`<button id="btn-${subset}" type="button" class="btn btn-secondary btn-offset">${subset}</button>`));
+          document.getElementById(`btn-${subset}`).addEventListener('click', event => { subset_current = subset; update();});
+        }
+
+        for (const x_type of ["all","large","small","tiny"]){
+          footer_zoom.appendChild(htmlToElement(`<button id="btn-xtype-${x_type}" type="button" class="btn btn-primary btn-offset">${x_type}</button>`));
+          document.getElementById(`btn-xtype-${x_type}`).addEventListener('click', event => { x_type_current = x_type; update();});
+        }
+
+        function pointermoved(event) {
+          const [xm, ym] = d3.pointer(event);
+          const d = d3.least(current_obj["data_local"], (d) =>
+            Math.hypot(current_obj['xScale'](d.count) - xm, current_obj['yScale'](d.pts_per_second) - ym)
+          ); // closest point
+
+          text_label.attr("x", current_obj['xScale'](d.count) + 4)
+              .attr("y", current_obj['yScale'](d.pts_per_second) - 4)
+              .text(`${d.name} - ${format_tick(d.pts_per_second)} Points/Second`);
+
+          for (const [processor, path_sub] of Object.entries(paths)) {
+            if (processor != processor_current) {
+              continue;
+            }
+            for (const [name, path] of Object.entries(path_sub)) {
+              if (name == d.name) {
+                path.attr("stroke-opacity", 1.0);
+              } else {
+                // console.log(`${name} - ${subsets[current_obj["subset"]].includes(name)}`);
+                path.attr("stroke-opacity", subsets[current_obj["subset"]].includes(name) ? 0.4 : 0.0);
+              }
+            }
+          }
+        }
+
+        function pointerentered() {
+          text_label.style("opacity", 1);
+          // path.style("mix-blend-mode", null).style("stroke", "#ddd");
+        }
+
+        function pointerleft() {
+          text_label.style("opacity", 0);
+          for (const [processor, path_sub] of Object.entries(paths)) {
+            if (processor != processor_current) {
+              continue;
+            }
+            for (const [name, path] of Object.entries(path_sub)) {
+              path.attr("stroke-opacity", subsets[current_obj["subset"]].includes(name) ? 1.0 : 0.0);
+            }
+          }
+        }
+
+
+        let margin = ({top: 20, right: 30, bottom: 42, left: 50});
+        let height = 800;
+        let width = 2000;
+
+        let yTickPosition = (g, y) => g.selectAll(".tick")
+          .attr("transform", d => `translate(0,${(isNaN(y(d)) ? yLinear(d) : y(d)) + 0.5})`);
+
+        let yAxis = (g, y, format) => g
+          .attr("transform", `translate(${margin.left},0)`)
+          .call(
+            d3.axisLeft(y)
+              .ticks(height / 80, format)
+              .tickFormat(format_tick)
+          )
+          .call(g => g.selectAll(".tick line").clone()
+              .attr("stroke-opacity", 0.2)
+              .attr("x2", width - margin.left - margin.right))
+          .call(g => g.select(".domain").remove());
+
+        let xAxis = (g,x) => g
+            .attr("transform", `translate(0,${height - margin.bottom})`)
+            .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0).tickFormat(format_tick))
+            .call(g => g.select(".domain").remove());
+
+        let yLinear = d3.scaleLinear()
+          .domain([0, d3.max(data, d => d.pts_per_second)]).nice()
+          .rangeRound([height - margin.bottom, margin.top]);  // this must be kept for drawing ticks, regardless of other changes
+
+        let line = (x, y) => {
+          return d3.line()
+            // .curve(d3.curveCatmullRomOpen)  // Slightly smooth the plot, but clips the last value
+            .x(d => x(d.count))
+            .y(d => y(d.pts_per_second));
+        };
+
+        const svg = d3.create("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .attr("viewBox", [0, 0, width, height])
+            .attr("style", "max-width: 100%; height: auto; height: intrinsic;")
+            .style("-webkit-tap-highlight-color", "transparent")
+            .on("pointerenter", pointerentered)
+            .on("pointermove", pointermoved)
+            .on("pointerleave", pointerleft)
+            .on("touchstart", (event) => event.preventDefault());
+
+        svg
+          .append("g")
+          .call((g) =>
+            g
+              .append("text")
+              .attr("x", margin.left * 2)
+              .attr("y", 16)
+              .attr("font-size", 16)
+              .attr("fill", "currentColor")
+              .attr("text-anchor", "start")
+              .text("Points per Second")
+          )
+          .call((g) =>
+            g
+              .append("text")
+              .attr("x", width / 2)
+              .attr("y", height - 5)
+              .attr("font-size", 16)
+              .attr("fill", "currentColor")
+              .attr("text-anchor", "center")
+              .text("Points in Set")
+          );
+
+        let text_label = svg.append("g").append("text")
+              .attr("x", width / 2)
+              .attr("y", height / 2)
+              .attr("font-size", 16)
+              .attr("text-anchor", "center")
+              .text("");
+
+        let current_obj = null;
+        let axes = [];
+        for (const x_type of ['all','small','large','tiny']) {
+          for (const x_scale of ['linear','log']) {
+            for (const y_scale of ['linear','log']) {
+              for (const processor of processors){
+
+                for (const [subset, values] of Object.entries(subsets)) {
+                    // filter out the relevant data, for scale extents
+                    let data_local = data.filter(d => {
+                      if (d.processor !== processor) {
+                        return false;
+                      }
+                      if (!values.includes(d.name)) {
+                        return false;  // if not in the game, ignore this value
+                      }
+                      if (x_type == 'all') {
+                        return true;
+                      } else if (x_type == 'small') {
+                        return d.count < 0.5 * 1000000;
+                      } else if (x_type == 'tiny') {
+                        return d.count < 0.025 * 1000000;
+                      } else if (x_type == 'large') {
+                        return d.count >= 0.5 * 1000000;
+                      }
+                      return true;
+                    });
+                    // console.log(`${x_type}/${x_scale}/${y_scale}/${subset} -> ${data_local.length}`);
+                    // lookup mask not required (it _is_ the subset)
+
+                    let yScale = (y_scale == "log" ? d3.scaleLog : d3.scaleLinear)()
+                      .domain(d3.extent(data_local, d => d.pts_per_second))
+                      .rangeRound([height - margin.bottom, margin.top]);
+
+                    const isPrimary = x_type == "all" && x_scale == "linear" && y_scale == "linear" && subset == "all" && processor == processor_current;
+                    const axisY = svg.append("g")
+                      .style("opacity", isPrimary ? 1.0 : 0.0)
+                      .call(yAxis, yScale, ",")
+                      .call(yTickPosition, yLinear);  // always linear to put to the right position
+
+                    let [x_min, x_max] = d3.extent(data_local, d => d.count);
+                    let xScale = (x_scale == "log" ? d3.scaleLog : d3.scaleLinear)()
+                      .domain([x_type == 'large' ? 0 : x_min, x_max])
+                      .range([margin.left, width - margin.right]);
+
+                    // create x axis
+                    // create y axis
+                    const axisX = svg.append("g")
+                      .style("opacity", isPrimary ? 1.0 : 0.0)
+                      .call(xAxis, xScale);
+                  
+                    let obj = 
+                      {
+                        x_type,
+                        x_scale,
+                        y_scale,
+                        yScale,
+                        xScale,
+                        subset,
+                        axisY,
+                        axisX,
+                        data_local,
+                        processor,
+                      };
+                    axes.push(obj);
+                    if (isPrimary) {
+                      current_obj = obj;
+                    }
+                  }
+                }
+            }
+          }
+        }
+        console.assert(current_obj !== null);
+
+        let paths = {};
+        for (const processor of processors) {
+          paths[processor] = {};
+          for (let index = 0; index < unique.length; index++) {
+            const name = unique[index];
+            let d = data.filter(d => d.name == name && d.processor == processor);
+            // console.log(`Generating path for ${processor}/${name}`);
+            if (d.length <= 0) {
+              continue;
+            }
+            const path = svg.append("path")
+              .datum(d)
+              .attr("fill", "none")
+              .attr("stroke", map_color(name))
+              .attr("stroke-width", 5.5)
+              .attr("stroke-linejoin", "round")
+              .attr("stroke-linecap", "round")
+              .attr("d", line(current_obj['xScale'], current_obj['yScale']));
+
+            paths[processor][name] = path;
+          }
+        }
+
+
+        document.getElementById('plot').appendChild(svg.node());
+
+        function update(duration_ms=1750){
+          let [x_type, x_scale, y_scale, subset, processor] = [x_type_current, x_scale_current, y_scale_current, subset_current, processor_current];
+          const t = svg.transition().duration(duration_ms);
+          for (const ax of axes) {
+            if (ax['x_type'] == x_type && ax['x_scale'] == x_scale && ax['y_scale'] == y_scale && ax['subset'] == subset && ax['processor'] == processor_current) {
+              current_obj = ax;
+              ax['axisY'].transition(t).style("opacity", 1).call(yTickPosition, current_obj['yScale']);
+              ax['axisX'].transition(t).style("opacity", 1);
+            } else {
+              ax['axisY'].transition(t).style("opacity", 0).call(yTickPosition, current_obj['yScale']);
+              ax['axisX'].transition(t).style("opacity", 0);
+            }
+          }
+
+          for (const [processor, path_sub] of Object.entries(paths)) {
+            for (const [name, path] of Object.entries(path_sub)) {
+              // console.log(`${name} - ${subsets[subset].includes(name)}`);
+              path.transition(t).attr("d", line(current_obj['xScale'], current_obj['yScale'])).attr("stroke-opacity", processor == processor_current && subsets[current_obj["subset"]].includes(name) ? 1.0 : 0.0);
+            }
+          }
+        }
+        subset_current = "baseline";
+        update(0);
+
+      });
+    </script>
+  </body>
+</html>
