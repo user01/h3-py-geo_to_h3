@@ -133,6 +133,7 @@ dmypy.json
 *.log.*
 benchmarks/
 *.html
+!docs/index.html
 bench_memory/
 bench_cpu/
 *.speedscope
