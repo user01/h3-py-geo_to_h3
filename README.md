@@ -43,7 +43,7 @@ The size of the set dictates the best performance as well. Threading and CUDA pe
 
 ## Benchmarks
 
-Jump straight to the resulting [benchmarks](https://user01.github.io/h3-py-geo_to_h3/) or the [conclusion](#conclusion).
+Plotted [benchmarks can be found here](https://user01.github.io/h3-py-geo_to_h3/).
 
 [![](docs/benchmarks.png)](https://user01.github.io/h3-py-geo_to_h3/)
 

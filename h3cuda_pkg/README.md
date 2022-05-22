@@ -123,7 +123,7 @@ Github actions attempts to build the package as a wheel, but YMMV and building y
 
 ## Licenses
 
-The H3 c code is [licensed](https://github.com/uber/h3/blob/master/LICENSE) under `Apache 2.0` by Uber. The original code can be found [here](https://github.com/uber/h3/tree/e0aae450ffa7a63a3b7982573c88325b42231332)
+The H3 c code is [licensed](https://github.com/uber/h3/blob/master/LICENSE) under `Apache 2.0` by Uber. The original code can be found [here](https://github.com/uber/h3/tree/e0aae450ffa7a63a3b7982573c88325b42231332).
 
 Some of the project configuration (notably most of `setup.py`) is licensed [BSD-2-Clause](https://github.com/rmcgibbo/npcuda-example/blob/master/LICENSE) by [rmcgibbo](https://github.com/rmcgibbo/npcuda-example).
 
