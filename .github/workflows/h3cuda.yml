@@ -37,28 +37,29 @@ jobs:
       - id: cuda-toolkit
         uses: Jimver/cuda-toolkit@v0.2.7
         with:
-          cuda: '11.7.0'
+          cuda: '11.4.0'
 
-      - name: Echo Version
+      - name: Echo CUDA Version
         run: |
           echo "Installed cuda version is: ${{steps.cuda-toolkit.outputs.cuda}}"
 
-      - name: Echo Version
+      - name: Echo CUDA Location
         run: |
           echo "Cuda install location: ${{steps.cuda-toolkit.outputs.CUDA_PATH}}"
 
-      - name: Echo Version
+      - name: GCC link
+        run: |
+          sudo ln -s /usr/bin/gcc /usr/local/cuda/bin/gcc
+
+      - name: Echo Compiler Versions
         run: |
           nvcc -V
+          gcc -v
 
       - name: Pip Freeze
         working-directory: h3cuda_pkg/
         run: |
           pip freeze
-
-      - name: GCC link
-        run: |
-          sudo ln -s /usr/bin/gcc /usr/local/cuda/bin/gcc
 
       - name: Build Wheel
         working-directory: h3cuda_pkg/
