@@ -47,3 +47,16 @@ jobs:
       - name: Echo Version
         run: |
           nvcc -V
+
+      - name: Build Wheel
+        working-directory: ./h3cuda_pkg
+        run: |
+          make wheel
+
+      - name: Archive whl result
+        uses: actions/upload-artifact@v3
+        working-directory: ./h3cuda_pkg
+        with:
+          name: h3cuda-wheel
+          path: dist/*.whl
+          if-no-files-found: error
