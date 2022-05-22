@@ -337,11 +337,11 @@
                       if (x_type == 'all') {
                         return true;
                       } else if (x_type == 'small') {
-                        return d.count < 0.5 * 1000000;
+                        return d.count < 2.5 * 1000000;
                       } else if (x_type == 'tiny') {
                         return d.count < 0.025 * 1000000;
                       } else if (x_type == 'large') {
-                        return d.count >= 0.5 * 1000000;
+                        return d.count >= 2.5 * 1000000;
                       }
                       return true;
                     });

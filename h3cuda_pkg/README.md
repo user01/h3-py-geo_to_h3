@@ -91,6 +91,14 @@ for idx in range(latitudes.shape[0]):
 
 See `test.py` for more examples.
 
+## Performance
+
+![](docs/benchmark-cuda-pytest.png)
+
+Unified offers slightly better performance than distinct.
+
+Recommendation is to use the form that matches data as provided.
+
 ## Limitations
 
 Depending on hardware, maximum throughput happens around 20 million points in a set.
@@ -100,6 +108,18 @@ Note that round errors, introduced by requiring float32 instead of float64 in th
 Based on testing, the effect is small. It occurs less than 1% of the time and the error less than 0.1% of the hex size.
 
 In short, the results are not verbatim, but are quite close for heatmaps or coarse selections.
+
+## Building
+
+Package is built and tested on Pop_OS 20.04, CUDA 11.4, gcc7, and an RTX 3090.
+
+Github actions attempts to build the package as a wheel, but YMMV and building yourself is recommended.
+
+1. Create python environment with parent directory's `Pipfile` - `pipenv install`
+2. Adjust `setup.py` - notably `extra_compile_args` to point to your gcc and specific arch if required
+3. Build `make wheel`. If successful, result is `dist/h3cuda*.whl`
+
+`make all` will uninstall `h3cuda`, build the package, install, and run provided tests.
 
 ## Licenses
 
