@@ -58,7 +58,7 @@ jobs:
 
       - name: GCC link
         run: |
-          ln -s /usr/bin/gcc /usr/local/cuda/bin/gcc
+          sudo ln -s /usr/bin/gcc /usr/local/cuda/bin/gcc
 
       - name: Build Wheel
         working-directory: h3cuda_pkg/
