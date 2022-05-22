@@ -49,7 +49,7 @@ jobs:
           nvcc -V
 
       - name: Build Wheel
-        working-directory: ./h3cuda_pkg
+        working-directory: h3cuda_pkg/
         run: |
           make wheel
 
@@ -58,5 +58,5 @@ jobs:
         working-directory: ./h3cuda_pkg
         with:
           name: h3cuda-wheel
-          path: dist/*.whl
+          path: h3cuda_pkg/dist/*.whl
           if-no-files-found: error
