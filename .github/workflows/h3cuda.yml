@@ -55,7 +55,6 @@ jobs:
 
       - name: Archive whl result
         uses: actions/upload-artifact@v3
-        working-directory: ./h3cuda_pkg
         with:
           name: h3cuda-wheel
           path: h3cuda_pkg/dist/*.whl
