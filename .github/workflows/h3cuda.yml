@@ -31,16 +31,19 @@ jobs:
           pipenv install --deploy --dev
 
 
-      - uses: Jimver/cuda-toolkit@v0.2.7
-        id: cuda-toolkit
+      - id: cuda-toolkit
+        uses: Jimver/cuda-toolkit@v0.2.7
         with:
           cuda: '11.7.0'
 
-      - run: |
-        echo "Installed cuda version is: ${{steps.cuda-toolkit.outputs.cuda}}"
+      - name: Echo Version
+        run: |
+          echo "Installed cuda version is: ${{steps.cuda-toolkit.outputs.cuda}}"
 
-      - run: |
-        echo "Cuda install location: ${{steps.cuda-toolkit.outputs.CUDA_PATH}}"
+      - name: Echo Version
+        run: |
+          echo "Cuda install location: ${{steps.cuda-toolkit.outputs.CUDA_PATH}}"
 
-      - run: |
-        nvcc -V
+      - name: Echo Version
+        run: |
+          nvcc -V
