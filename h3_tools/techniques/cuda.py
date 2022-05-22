@@ -12,10 +12,8 @@ def cuda(points: np.ndarray, resolution: int, blocks: int = 64, threads: int = 3
     if not CUDA_AVAILABLE:
         raise ImportError("Cuda package not available")
     lat = np.ascontiguousarray(points[:, 0], dtype=np.float32)
-    # Note this could be (somewhat?) faster if the signature changed
     lon = np.ascontiguousarray(points[:, 1], dtype=np.float32)
-    op = h3cuda.GPUH3_latLngToCell(lat, lon, resolution, blocks, threads)
-    result = op.idxs
+    result = h3cuda.geo_to_h3_distinct(lat, lon, resolution, blocks, threads)
     assert result.dtype == np.uint64
     return result
 
@@ -23,12 +21,6 @@ def cuda(points: np.ndarray, resolution: int, blocks: int = 64, threads: int = 3
 def cuda_unified(points: np.ndarray, resolution: int, blocks: int = 64, threads: int = 32) -> np.ndarray:
     if not CUDA_AVAILABLE:
         raise ImportError("Cuda package not available")
-    pts = (
-        points
-        if points.flags["C_CONTIGUOUS"] and points.dtype == np.float32
-        else np.ascontiguousarray(points, dtype=np.float32)
-    )
-    op = h3cuda.Unified(pts.reshape(-1), resolution, blocks, threads)
-    result = op.idxs
+    result = h3cuda.geo_to_h3_unified(points, resolution, blocks, threads)
     assert result.dtype == np.uint64
     return result
