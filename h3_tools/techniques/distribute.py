@@ -5,11 +5,12 @@ from multiprocess import Pool
 from .vectorized import vectorized
 from .api import integer
 import os
-  
-  
+
+
 _CPU_COUNT = os.cpu_count()
 
-def threadpool(points:np.ndarray, resolution: int, workers:int=None)->np.ndarray:
+
+def threadpool(points: np.ndarray, resolution: int, workers: int = None) -> np.ndarray:
     workers = workers if workers else _CPU_COUNT
     payload = np.array_split(points, workers) if points.shape[0] > workers else [points]
     with ThreadPoolExecutor(workers) as executor:
@@ -17,7 +18,7 @@ def threadpool(points:np.ndarray, resolution: int, workers:int=None)->np.ndarray
     return np.concatenate([f.result() for f in futures])
 
 
-def pool(points:np.ndarray, resolution: int, workers:int=None)->np.ndarray:
+def pool(points: np.ndarray, resolution: int, workers: int = None) -> np.ndarray:
     workers = workers if workers else _CPU_COUNT
     payload = np.array_split(points, workers) if points.shape[0] > workers else [points]
     with Pool(workers) as pool:
@@ -25,7 +26,7 @@ def pool(points:np.ndarray, resolution: int, workers:int=None)->np.ndarray:
     return np.concatenate(results)
 
 
-def pool_vector(points:np.ndarray, resolution: int, workers:int=None)->np.ndarray:
+def pool_vector(points: np.ndarray, resolution: int, workers: int = None) -> np.ndarray:
     workers = workers if workers else _CPU_COUNT
     payload = np.array_split(points, workers) if points.shape[0] > workers else [points]
     with Pool(workers) as pool:
@@ -33,7 +34,7 @@ def pool_vector(points:np.ndarray, resolution: int, workers:int=None)->np.ndarra
     return np.concatenate(results)
 
 
-def threadpool_vector(points:np.ndarray, resolution: int, workers:int=None)->np.ndarray:
+def threadpool_vector(points: np.ndarray, resolution: int, workers: int = None) -> np.ndarray:
     workers = workers if workers else _CPU_COUNT
     payload = np.array_split(points, workers) if points.shape[0] > workers else [points]
     # note the payloads are np views (or tiny)
