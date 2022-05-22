@@ -33,21 +33,6 @@ from setuptools import Extension, setup
 import numpy
 
 
-# NOTE: These architecture flags are based on CUDA 11.1 for best performance with RTX 30*
-# Adjustments may be required for specific architecture
-ARCH_FLAGS = [
-    "-arch=sm_80",
-    "-gencode=arch=compute_80,code=sm_80",
-    "-gencode=arch=compute_86,code=sm_86",
-    "-gencode=arch=compute_87,code=sm_87",
-    "-gencode=arch=compute_87,code=compute_87",
-]
-GCC_OVERRIDE = [
-    "-ccbin=/usr/local/cuda/bin/gcc",
-    # NOTE: Had to force this to gcc 7 on current system, but not in CI
-]
-
-
 def find_in_path(name, path):
     """Find a file in a search path"""
 
@@ -157,11 +142,11 @@ ext = Extension(
     # customize_compiler()
     extra_compile_args={
         "gcc": [],
-        "nvcc": ARCH_FLAGS
-        + GCC_OVERRIDE
-        + [
+        "nvcc": [
+            # "-arch=sm_80",
             # "-g",  # Debug flags - remove in prod
             # "-G",  # Debug flags - remove in prod
+            "-ccbin=/usr/local/cuda/bin/gcc",  # NOTE: Had to force this to gcc 7 on current system
             "--ptxas-options=-v",
             "-c",
             "--compiler-options",
