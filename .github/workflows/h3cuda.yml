@@ -48,10 +48,15 @@ jobs:
         run: |
           nvcc -V
 
+      - name: Pip Freeze
+        working-directory: h3cuda_pkg/
+        run: |
+          pip freeze
+
       - name: Build Wheel
         working-directory: h3cuda_pkg/
         run: |
-          make wheel
+          pipenv run python setup.py bdist_wheel
 
       - name: Archive whl result
         uses: actions/upload-artifact@v3
