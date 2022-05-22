@@ -37,7 +37,7 @@ jobs:
       - id: cuda-toolkit
         uses: Jimver/cuda-toolkit@v0.2.7
         with:
-          cuda: '11.4.0'
+          cuda: '11.0.0'
 
       - name: Echo CUDA Version
         run: |
