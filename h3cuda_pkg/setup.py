@@ -47,6 +47,7 @@ GCC_OVERRIDE = [
     # NOTE: Had to force this to gcc 7 on current system, but not in CI
 ]
 
+
 def find_in_path(name, path):
     """Find a file in a search path"""
 
@@ -156,7 +157,9 @@ ext = Extension(
     # customize_compiler()
     extra_compile_args={
         "gcc": [],
-        "nvcc": ARCH_FLAGS + GCC_OVERRIDE + [
+        "nvcc": ARCH_FLAGS
+        + GCC_OVERRIDE
+        + [
             # "-g",  # Debug flags - remove in prod
             # "-G",  # Debug flags - remove in prod
             "--ptxas-options=-v",
