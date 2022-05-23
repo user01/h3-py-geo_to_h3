@@ -1,0 +1,15 @@
+graph TD
+    root[H3 geo_to_h3] -->stability{Stability Risk}
+    stability --> |None| multicore_simple{Multicore}
+    multicore_simple --> |no| int[Integer]
+    multicore_simple --> |yes| multicore_simple_size{>15k Points}
+    multicore_simple_size --> |no| int
+    multicore_simple_size --> |yes| pi[Pool Integer]
+    stability --> |Unstable| multicore_unstable{Multicore}
+    multicore_unstable --> |no| vectorized[Vectorized]
+    multicore_unstable --> |yes| vectorized_size{>200k Points}
+    vectorized_size --> |yes| thread_pool[ThreadPool Vectorized]
+    vectorized_size --> |no| vectorized
+    stability --> |CUDA| cuda_size{>1.3MM Points}
+    cuda_size --> |no| multicore_unstable
+    cuda_size --> |yes| cuda_unified[CUDA]

@@ -1,0 +1,73 @@
+name: Build h3cuda wheel
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip pipenv wheel
+          pipenv install --dev --deploy
+
+      - id: cache-pipenv
+        uses: actions/cache@v1
+        with:
+          path: ~/.local/share/virtualenvs
+          key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
+
+      - name: Install dependencies
+        if: steps.cache-pipenv.outputs.cache-hit != 'true'
+        run: |
+          pipenv install --deploy --dev
+
+      - name: Install Build Essential (gcc)
+        run: |
+          sudo apt-get install -y build-essential
+
+      - id: cuda-toolkit
+        uses: Jimver/cuda-toolkit@v0.2.7
+        with:
+          cuda: '11.7.0'
+
+      - name: Echo Version
+        run: |
+          echo "Installed cuda version is: ${{steps.cuda-toolkit.outputs.cuda}}"
+
+      - name: Echo Version
+        run: |
+          echo "Cuda install location: ${{steps.cuda-toolkit.outputs.CUDA_PATH}}"
+
+      - name: Echo Version
+        run: |
+          nvcc -V
+
+      - name: Pip Freeze
+        working-directory: h3cuda_pkg/
+        run: |
+          pip freeze
+
+      - name: GCC link
+        run: |
+          sudo ln -s /usr/bin/gcc /usr/local/cuda/bin/gcc
+
+      - name: Build Wheel
+        working-directory: h3cuda_pkg/
+        run: |
+          pipenv run python setup.py bdist_wheel
+
+      - name: Archive whl result
+        uses: actions/upload-artifact@v3
+        with:
+          name: h3cuda-wheel
+          path: h3cuda_pkg/dist/*.whl
+          if-no-files-found: error
